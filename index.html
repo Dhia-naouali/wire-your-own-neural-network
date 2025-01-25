@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Plane Equation with Points and Loss Function</title>
+  <style>
+    /* Add the updated CSS here */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+      color: #e0e0e0;
+    }
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(26, 26, 26, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      font-size: 12px;
+    }
+    .controls h1 {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .slider-container {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #e0e0e0;
+      width: 20px;
+      font-size: 10px;
+    }
+    input[type="range"] {
+      width: 120px;
+      margin: 0 10px;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 2px;
+      background: #888;
+      outline: none;
+      opacity: 0.7;
+      transition: opacity .2s;
+    }
+    input[type="range"]:hover {
+      opacity: 1;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 10px;
+      height: 10px;
+      background: #00ff00;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 10px;
+      height: 10px;
+      background: #00ff00;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+    .slider-value {
+      color: #00ff00;
+      font-weight: bold;
+      width: 40px;
+      text-align: center;
+      font-size: 10px;
+    }
+    .slider-arrow {
+      cursor: pointer;
+      font-size: 12px;
+      color: #00ff00;
+      user-select: none;
+    }
+    .slider-arrow:hover {
+      color: #00cc00;
+    }
+    .switch-container {
+      margin-top: 10px;
+      font-size: 10px;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #00ff00;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    .equation {
+      position: absolute;
+      bottom: 50px;
+      left: 20px;
+      background-color: rgba(26, 26, 26, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      font-size: 14px;
+    }
+    .loss {
+      position: absolute;
+      top: 40px;
+      right: 800px;
+      background-color: rgba(26, 26, 26, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      font-size: 20px;
+    }
+    .loss-value {
+      color: red;
+      font-weight: bold;
+      font-size: 20px
+    }
+    .graph-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+    }
+    .graph {
+      height: 100%;
+    }
+    #graph1 {
+      width: 50%;
+    }
+    #graph2 {
+      width: 50%;
+    }
+    .camera-angle {
+      position: absolute;
+      bottom: 10px;
+      left: 20px;
+      background-color: rgba(26, 26, 26, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      font-size: 12px;
+    }
+    .navigation {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      background-color: rgba(26, 26, 26, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    .navigation button {
+      background-color: #00ff00;
+      border: none;
+      color: #121212;
+      padding: 5px 10px;
+      margin: 0 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .navigation button:hover {
+      background-color: #00cc00;
+    }
+    .section-indicator {
+      color: #e0e0e0;
+      font-size: 14px;
+    }
+    .gradient-vector {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background-color: rgba(26, 26, 26, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      font-size: 12px;
+    }
+    .dataset-selector {
+      margin-left: 20px;
+      display: flex;
+      gap: 10px;
+      font-size: 12px;
+      color: #e0e0e0;
+    }
+    .dataset-selector label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    .dataset-selector input[type="radio"] {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #00ff00;
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      margin-bottom: 5px;
+    }
+    .dataset-selector input[type="radio"]:checked {
+      background-color: #00ff00;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/FontLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three/examples/js/geometries/TextGeometry.js"></script>
+</head>
+<body>
+  <div class="controls">
+    <h1>3D Plane Equation</h1>
+    <!-- Sliders for Plane 1 -->
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('a0', -1)">&#9664;</div>
+      <label for="a0">a0:</label>
+      <input type="range" id="a0" min="-10" max="10" value="0.0" step="0.1">
+      <div class="slider-value" id="a0-value">0.0</div>
+      <div class="slider-arrow" onclick="adjustSlider('a0', 1)">&#9654;</div>
+    </div>
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('a1', -1)">&#9664;</div>
+      <label for="a1">a1:</label>
+      <input type="range" id="a1" min="-10" max="10" value="0.0" step="0.1">
+      <div class="slider-value" id="a1-value">0.0</div>
+      <div class="slider-arrow" onclick="adjustSlider('a1', 1)">&#9654;</div>
+    </div>
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('a2', -1)">&#9664;</div>
+      <label for="a2">a2:</label>
+      <input type="range" id="a2" min="-10" max="10" value="-3.0" step="0.1">
+      <div class="slider-value" id="a2-value">-3.0</div>
+      <div class="slider-arrow" onclick="adjustSlider('a2', 1)">&#9654;</div>
+    </div>
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('a3', -1)">&#9664;</div>
+      <label for="a3">a3:</label>
+      <input type="range" id="a3" min="-10" max="10" value="3.5" step="0.1">
+      <div class="slider-value" id="a3-value">3.5</div>
+      <div class="slider-arrow" onclick="adjustSlider('a3', 1)">&#9654;</div>
+    </div>
+
+    <!-- Sliders for Plane 2 -->
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('b0', -1)">&#9664;</div>
+      <label for="b0">b0:</label>
+      <input type="range" id="b0" min="-10" max="10" value="0.0" step="0.1">
+      <div class="slider-value" id="b0-value">0.0</div>
+      <div class="slider-arrow" onclick="adjustSlider('b0', 1)">&#9654;</div>
+    </div>
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('b1', -1)">&#9664;</div>
+      <label for="b1">b1:</label>
+      <input type="range" id="b1" min="-10" max="10" value="0.0" step="0.1">
+      <div class="slider-value" id="b1-value">0.0</div>
+      <div class="slider-arrow" onclick="adjustSlider('b1', 1)">&#9654;</div>
+    </div>
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('b2', -1)">&#9664;</div>
+      <label for="b2">b2:</label>
+      <input type="range" id="b2" min="-10" max="10" value="-3.0" step="0.1">
+      <div class="slider-value" id="b2-value">-3.0</div>
+      <div class="slider-arrow" onclick="adjustSlider('b2', 1)">&#9654;</div>
+    </div>
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('b3', -1)">&#9664;</div>
+      <label for="b3">b3:</label>
+      <input type="range" id="b3" min="-10" max="10" value="-3.5" step="0.1">
+      <div class="slider-value" id="b3-value">-3.5</div>
+      <div class="slider-arrow" onclick="adjustSlider('b3', 1)">&#9654;</div>
+    </div>
+
+    <!-- Sliders for New Parameters -->
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('new_param1', -1)">&#9664;</div>
+      <label for="new_param1">p1:</label>
+      <input type="range" id="new_param1" min="-10" max="10" value="1.0" step="0.1">
+      <div class="slider-value" id="new_param1-value">1.0</div>
+      <div class="slider-arrow" onclick="adjustSlider('new_param1', 1)">&#9654;</div>
+    </div>
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('new_param2', -1)">&#9664;</div>
+      <label for="new_param2">p2:</label>
+      <input type="range" id="new_param2" min="-10" max="10" value="1.0" step="0.1">
+      <div class="slider-value" id="new_param2-value">1.0</div>
+      <div class="slider-arrow" onclick="adjustSlider('new_param2', 1)">&#9654;</div>
+    </div>
+    <div class="slider-container">
+      <div class="slider-arrow" onclick="adjustSlider('new_param3', -1)">&#9664;</div>
+      <label for="new_param3">p3:</label>
+      <input type="range" id="new_param3" min="-10" max="10" value="0.0" step="0.1">
+      <div class="slider-value" id="new_param3-value">0.0</div>
+      <div class="slider-arrow" onclick="adjustSlider('new_param3', 1)">&#9654;</div>
+    </div>
+
+    <!-- Switches -->
+    <div class="switch-container">
+      <label class="switch">
+        <input type="checkbox" id="togglePoints">
+        <span class="slider"></span>
+      </label>
+      <span style="margin-left: 5px;">Hide Data Points</span>
+    </div>
+    <div class="switch-container">
+      <label class="switch">
+        <input type="checkbox" id="togglePlane" checked>
+        <span class="slider"></span>
+      </label>
+      <span style="margin-left: 5px;">Hide Grad Plane</span>
+    </div>
+    <div class="switch-container">
+      <label class="switch">
+        <input type="checkbox" id="togglePlane1" checked>
+        <span class="slider"></span>
+      </label>
+      <span style="margin-left: 5px;">Hide Plane 1</span>
+    </div>
+    <div class="switch-container">
+      <label class="switch">
+        <input type="checkbox" id="togglePlane2" checked>
+        <span class="slider"></span>
+      </label>
+      <span style="margin-left: 5px;">Hide Plane 2</span>
+    </div>
+    <div class="switch-container">
+      <label class="switch">
+        <input type="checkbox" id="togglePlane3" checked>
+        <span class="slider"></span>
+      </label>
+      <span style="margin-left: 5px;">Hide Plane 3</span>
+    </div>
+    <div class="switch-container">
+      <label class="switch">
+        <input type="checkbox" id="trackSphere" checked>
+        <span class="slider"></span>
+      </label>
+      <span style="margin-left: 5px;">Track Sphere</span>
+    </div>
+    <div class="switch-container">
+      <label class="switch">
+        <input type="checkbox" id="toggleGradientArrow">
+        <span class="slider"></span>
+      </label>
+      <span style="margin-left: 5px;">Hide Gradient Arrow</span>
+    </div>
+  </div>
+
+  <div class="equation" id="equation">
+    Plane 1 Equation: a0 + a1*x + a2*y + a3*z = 0<br>
+    Plane 2 Equation: b0 + b1*x + b2*y + b3*z = 0<br>
+    Plane 3 Equation: p1*(Plane1) + p2*(Plane2) + p3 = 0
+  </div>
+
+  <div class="loss" id="loss">
+    Cross-Entropy Loss: <span class="loss-value">0.0000</span>
+  </div>
+
+  <div class="camera-angle" id="camera-angle">
+    Camera Position: (0, 0, 0) | Angle: (0, 0, 0)
+  </div>
+
+  <div class="navigation">
+    <button onclick="renderer2.domElement.style.display = 'None';">Previous</button>
+    <div class="section-indicator" id="section-indicator">Section 1</div>
+    <button onclick="renderer2.domElement.style.display = 'block';">Next</button>
+    <div class="dataset-selector">
+      <label>
+        <input type="radio" name="dataset" value="1" checked onchange="updateDataset()"> 1
+      </label>
+      <label>
+        <input type="radio" name="dataset" value="2" onchange="updateDataset()"> 2
+      </label>
+      <label>
+        <input type="radio" name="dataset" value="3" onchange="updateDataset()"> 3
+      </label>
+    </div>
+  </div>
+
+  <div class="gradient-vector" id="gradient-vector">
+    Gradient Vector: (0, 0, 0)
+  </div>
+
+  <div class="graph-container">
+    <div class="graph" id="graph1"></div>
+    <div class="graph" id="graph2"></div>
+  </div>
+  <script>
+    // Add the updated JavaScript here
+    const a0Slider = document.getElementById('a0');
+    const a1Slider = document.getElementById('a1');
+    const a2Slider = document.getElementById('a2');
+    const a3Slider = document.getElementById('a3');
+    const a0Value = document.getElementById('a0-value');
+    const a1Value = document.getElementById('a1-value');
+    const a2Value = document.getElementById('a2-value');
+    const a3Value = document.getElementById('a3-value');
+
+    const b0Slider = document.getElementById('b0');
+    const b1Slider = document.getElementById('b1');
+    const b2Slider = document.getElementById('b2');
+    const b3Slider = document.getElementById('b3');
+    const b0Value = document.getElementById('b0-value');
+    const b1Value = document.getElementById('b1-value');
+    const b2Value = document.getElementById('b2-value');
+    const b3Value = document.getElementById('b3-value');
+
+    const newParam1Slider = document.getElementById('new_param1');
+    const newParam2Slider = document.getElementById('new_param2');
+    const newParam3Slider = document.getElementById('new_param3');
+    const newParam1Value = document.getElementById('new_param1-value');
+    const newParam2Value = document.getElementById('new_param2-value');
+    const newParam3Value = document.getElementById('new_param3-value');
+
+    const equationElement = document.getElementById('equation');
+    const lossElement = document.getElementById('loss');
+
+    let a0 = parseFloat(a0Slider.value);
+    let a1 = parseFloat(a1Slider.value);
+    let a2 = parseFloat(a2Slider.value);
+    let a3 = parseFloat(a3Slider.value);
+
+    let b0 = parseFloat(b0Slider.value);
+    let b1 = parseFloat(b1Slider.value);
+    let b2 = parseFloat(b2Slider.value);
+    let b3 = parseFloat(b3Slider.value);
+
+    let newParam1 = parseFloat(newParam1Slider.value);
+    let newParam2 = parseFloat(newParam2Slider.value);
+    let newParam3 = parseFloat(newParam3Slider.value);
+
+    // Scene 1 setup
+    const scene1 = new THREE.Scene();
+    const camera1 = new THREE.PerspectiveCamera(75, (window.innerWidth * 0.45) / window.innerHeight, 0.1, 1000);
+    const renderer1 = new THREE.WebGLRenderer();
+    renderer1.setSize(window.innerWidth * 0.5, window.innerHeight);
+    document.getElementById('graph1').appendChild(renderer1.domElement);
+    const controls1 = new THREE.OrbitControls(camera1, renderer1.domElement);
+    controls1.enableDamping = true;
+    controls1.dampingFactor = 0.05;
+
+    // Axes and plane setup for scene1
+    const axesSize = 20;
+    const axesThickness = 2;
+    const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-axesSize, 0, 0),
+      new THREE.Vector3(axesSize, 0, 0),
+    ]);
+    const zAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, -axesSize),
+      new THREE.Vector3(0, 0, axesSize),
+    ]);
+    const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, -axesSize, 0),
+      new THREE.Vector3(0, axesSize, 0),
+    ]);
+
+    const axesMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: axesThickness });
+    const xAxis = new THREE.Line(xAxisGeometry, axesMaterial);
+    const zAxis = new THREE.Line(zAxisGeometry, axesMaterial);
+    const yAxis = new THREE.Line(yAxisGeometry, axesMaterial);
+    scene1.add(xAxis);
+    scene1.add(yAxis);
+    scene1.add(zAxis);
+
+    const arrowheadGeometry = new THREE.ConeGeometry(0.5, 2, 16);
+    const arrowheadMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    const xArrowhead = new THREE.Mesh(arrowheadGeometry, arrowheadMaterial);
+    xArrowhead.position.set(axesSize, 0, 0);
+    xArrowhead.rotation.z = -Math.PI / 2;
+    scene1.add(xArrowhead);
+
+    const yArrowhead = new THREE.Mesh(arrowheadGeometry, arrowheadMaterial);
+    yArrowhead.position.set(0, axesSize, 0);
+    scene1.add(yArrowhead);
+
+    const zArrowhead = new THREE.Mesh(arrowheadGeometry, arrowheadMaterial);
+    zArrowhead.position.set(0, 0, axesSize);
+    zArrowhead.rotation.x = Math.PI / 2;
+    scene1.add(zArrowhead);
+
+    const fontLoader = new THREE.FontLoader();
+    fontLoader.load('https://cdn.jsdelivr.net/npm/three/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+      const textGeometrySettings = { font, size: 1.5, height: 0.2 };
+      const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const xLabel = new THREE.Mesh(new THREE.TextGeometry('x', textGeometrySettings), textMaterial);
+      xLabel.position.set(axesSize + 2, 0, 0);
+      scene1.add(xLabel);
+      const yLabel = new THREE.Mesh(new THREE.TextGeometry('y', textGeometrySettings), textMaterial);
+      yLabel.position.set(0, axesSize + 2, 0);
+      scene1.add(yLabel);
+      const zLabel = new THREE.Mesh(new THREE.TextGeometry('z', textGeometrySettings), textMaterial);
+      zLabel.position.set(0, 0, axesSize + 2);
+      scene1.add(zLabel);
+    });
+
+    // Plane 1
+    const planeGeometry1 = new THREE.PlaneGeometry(20, 20, 20, 20);
+    const planeMaterial1 = new THREE.MeshBasicMaterial({
+      color: 0x4A90E2,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const plane1 = new THREE.Mesh(planeGeometry1, planeMaterial1);
+    scene1.add(plane1);
+
+    const wireframeGeometry1 = new THREE.WireframeGeometry(planeGeometry1);
+    const wireframeMaterial1 = new THREE.LineBasicMaterial({ color: 0x88B8E6, linewidth: 1 });
+    const wireframe1 = new THREE.LineSegments(wireframeGeometry1, wireframeMaterial1);
+    scene1.add(wireframe1);
+
+    // Plane 2
+    const planeGeometry2 = new THREE.PlaneGeometry(20, 20, 20, 20);
+    const planeMaterial2 = new THREE.MeshBasicMaterial({
+      color: 0xFFA500,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const plane2 = new THREE.Mesh(planeGeometry2, planeMaterial2);
+    scene1.add(plane2);
+
+    const wireframeGeometry2 = new THREE.WireframeGeometry(planeGeometry2);
+    const wireframeMaterial2 = new THREE.LineBasicMaterial({ color: 0xFF8C00, linewidth: 1 });
+    const wireframe2 = new THREE.LineSegments(wireframeGeometry2, wireframeMaterial2);
+    scene1.add(wireframe2);
+
+    // Plane 3
+    const planeGeometry3 = new THREE.PlaneGeometry(20, 20, 20, 20);
+    const planeMaterial3 = new THREE.MeshBasicMaterial({
+      color: 0x00FF00,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const plane3 = new THREE.Mesh(planeGeometry3, planeMaterial3);
+    scene1.add(plane3);
+
+    const wireframeGeometry3 = new THREE.WireframeGeometry(planeGeometry3);
+    const wireframeMaterial3 = new THREE.LineBasicMaterial({ color: 0x00CC00, linewidth: 1 });
+    const wireframe3 = new THREE.LineSegments(wireframeGeometry3, wireframeMaterial3);
+    scene1.add(wireframe3);
+
+    // Hide Plane 1 and its wireframe by default
+    plane1.visible = false;
+    wireframe1.visible = false;
+
+    // Hide Plane 2 and its wireframe by default
+    plane2.visible = false;
+    wireframe2.visible = false;
+
+    // Hide Plane 3 and its wireframe by default
+    plane3.visible = false;
+    wireframe3.visible = false;
+
+    camera1.position.set(-37.75, 0, 0);
+    camera1.lookAt(0, 0, 0);
+
+    function updatePlane1() {
+      const vertices = plane1.geometry.attributes.position.array;
+      for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const y = vertices[i + 1];
+        const z = (-a0 - a1 * x - a2 * y) / a3;
+        vertices[i + 2] = z;
+      }
+      plane1.geometry.attributes.position.needsUpdate = true;
+      wireframe1.geometry = new THREE.WireframeGeometry(plane1.geometry);
+    }
+
+    function updatePlane2() {
+      const vertices = plane2.geometry.attributes.position.array;
+      for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const y = vertices[i + 1];
+        const z = (-b0 - b1 * x - b2 * y) / b3;
+        vertices[i + 2] = z;
+      }
+      plane2.geometry.attributes.position.needsUpdate = true;
+      wireframe2.geometry = new THREE.WireframeGeometry(plane2.geometry);
+    }
+
+    function updatePlane3() {
+      const vertices = plane3.geometry.attributes.position.array;
+      for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const y = vertices[i + 1];
+        const z1 = (-a0 - a1 * x - a2 * y) / a3; // Plane 1 output
+        const z2 = (-b0 - b1 * x - b2 * y) / b3; // Plane 2 output
+
+        // Apply sigmoid activation and scale the output
+        const activated_z1 = sigmoid(z1) * 10; // Scale sigmoid output to a visible range
+        const activated_z2 = sigmoid(z2) * 10; // Scale sigmoid output to a visible range
+
+        // Combine the activated outputs with weights and bias
+        const z = newParam1 * activated_z1 + newParam2 * activated_z2 + newParam3;
+        vertices[i + 2] = z;
+      }
+      plane3.geometry.attributes.position.needsUpdate = true;
+      wireframe3.geometry = new THREE.WireframeGeometry(plane3.geometry);
+    }
+
+    let isUpdating = false;
+    function throttledUpdatePlane() {
+      if (!isUpdating) {
+        isUpdating = true;
+        requestAnimationFrame(() => {
+          updatePlane1();
+          updatePlane2();
+          updatePlane3();
+          updateLoss();
+          updateGrid();
+          updateSpherePosition();
+          updateDerivativePlane();
+          updateGradientArrow();
+          isUpdating = false;
+        });
+      }
+    }
+
+    a0Slider.addEventListener('input', () => {
+      a0 = parseFloat(a0Slider.value);
+      a0Value.textContent = a0.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    a1Slider.addEventListener('input', () => {
+      a1 = parseFloat(a1Slider.value);
+      a1Value.textContent = a1.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    a2Slider.addEventListener('input', () => {
+      a2 = parseFloat(a2Slider.value);
+      a2Value.textContent = a2.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    a3Slider.addEventListener('input', () => {
+      a3 = parseFloat(a3Slider.value);
+      a3Value.textContent = a3.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    b0Slider.addEventListener('input', () => {
+      b0 = parseFloat(b0Slider.value);
+      b0Value.textContent = b0.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    b1Slider.addEventListener('input', () => {
+      b1 = parseFloat(b1Slider.value);
+      b1Value.textContent = b1.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    b2Slider.addEventListener('input', () => {
+      b2 = parseFloat(b2Slider.value);
+      b2Value.textContent = b2.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    b3Slider.addEventListener('input', () => {
+      b3 = parseFloat(b3Slider.value);
+      b3Value.textContent = b3.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    newParam1Slider.addEventListener('input', () => {
+      newParam1 = parseFloat(newParam1Slider.value);
+      newParam1Value.textContent = newParam1.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    newParam2Slider.addEventListener('input', () => {
+      newParam2 = parseFloat(newParam2Slider.value);
+      newParam2Value.textContent = newParam2.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    newParam3Slider.addEventListener('input', () => {
+      newParam3 = parseFloat(newParam3Slider.value);
+      newParam3Value.textContent = newParam3.toFixed(2);
+      throttledUpdatePlane();
+    });
+
+    updatePlane1();
+    updatePlane2();
+    updatePlane3();
+
+    const points = [];
+    const pointGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+    const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const darkGrayMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const trueLabels = [];
+    const pointPositions = [];
+    for (let i = 0; i < 400; i++) {
+      const x = (Math.random() - 0.5) * 20;
+      const y = (Math.random() - 0.5) * 20;
+      const z = (Math.random() - 0.5) * 20;
+      const condition = x * 10 + 2 * y * y * -4 + z * 0.4 + 5 > 0;
+      const material = condition ? whiteMaterial : darkGrayMaterial;
+      const point = new THREE.Mesh(pointGeometry, material);
+      point.position.set(x, y, z);
+      scene1.add(point);
+      points.push(point);
+      trueLabels.push(condition ? 1 : 0);
+      pointPositions.push({ x, y, z });
+    }
+
+    function sigmoid(x) {
+      return 1 / (1 + Math.exp(-x));
+    }
+
+    function crossEntropyLoss(y_true, y_pred) {
+      const epsilon = 1e-7;
+      y_pred = Math.max(epsilon, Math.min(1 - epsilon, y_pred));
+      return -(y_true * Math.log(y_pred) + (1 - y_true) * Math.log(1 - y_pred))-6;
+    }
+
+    function updateLoss() {
+      let totalLoss = 0;
+      for (let i = 0; i < points.length; i++) {
+        const { x, y, z } = pointPositions[i];
+        const y_true = trueLabels[i];
+        const y_hat = sigmoid(a0 + a1 * x + a2 * y + a3 * z);
+        totalLoss += crossEntropyLoss(y_true, y_hat);
+      }
+      const avgLoss = totalLoss / points.length;
+      lossElement.querySelector('.loss-value').textContent = avgLoss.toFixed(4);
+      return avgLoss;
+    }
+
+    updateLoss();
+
+    function updateEquationDisplay() {
+      equationElement.innerHTML = `
+        Plane 1 Equation: ${a0.toFixed(2)} + ${a1.toFixed(2)}x + ${a2.toFixed(2)}y + ${a3.toFixed(2)}z = 0<br>
+        Plane 2 Equation: ${b0.toFixed(2)} + ${b1.toFixed(2)}x + ${b2.toFixed(2)}y + ${b3.toFixed(2)}z = 0<br>
+        Plane 3 Equation: ${newParam1.toFixed(2)}*(Plane1) + ${newParam2.toFixed(2)}*(Plane2) + ${newParam3.toFixed(2)} = 0
+      `;
+    }
+
+    updateEquationDisplay();
+
+    function updateCameraInfo() {
+      const cameraPosition = camera1.position;
+      const cameraRotation = camera1.rotation;
+
+      const rotationDegrees = {
+        x: THREE.MathUtils.radToDeg(cameraRotation.x),
+        y: THREE.MathUtils.radToDeg(cameraRotation.y),
+        z: THREE.MathUtils.radToDeg(cameraRotation.z),
+      };
+
+      const cameraAngleElement = document.getElementById('camera-angle');
+      cameraAngleElement.textContent = `Camera Position: (${cameraPosition.x.toFixed(2)}, ${cameraPosition.y.toFixed(2)}, ${cameraPosition.z.toFixed(2)}) | Angle: (${rotationDegrees.x.toFixed(2)}, ${rotationDegrees.y.toFixed(2)}, ${rotationDegrees.z.toFixed(2)})`;
+    }
+
+    function animate1() {
+      requestAnimationFrame(animate1);
+      controls1.update();
+      updateCameraInfo();
+      renderer1.render(scene1, camera1);
+    }
+
+    animate1();
+
+    window.addEventListener('resize', () => {
+      camera1.aspect = (window.innerWidth * 0.45) / window.innerHeight;
+      camera1.updateProjectionMatrix();
+      renderer1.setSize(window.innerWidth * 0.45, window.innerHeight);
+    });
+
+    const scene2 = new THREE.Scene();
+    const camera2 = new THREE.PerspectiveCamera(75, (window.innerWidth * 0.45) / window.innerHeight, 0.1, 1000);
+    const renderer2 = new THREE.WebGLRenderer();
+    renderer2.setSize(window.innerWidth * 0.5, window.innerHeight);
+    document.getElementById('graph2').appendChild(renderer2.domElement);
+    renderer2.domElement.style.display = 'None';
+    const controls2 = new THREE.OrbitControls(camera2, renderer2.domElement);
+    controls2.enableDamping = true;
+    controls2.dampingFactor = 0.05;
+
+    const xAxis2 = new THREE.Line(xAxisGeometry, axesMaterial);
+    const yAxis2 = new THREE.Line(yAxisGeometry, axesMaterial);
+    const zAxis2 = new THREE.Line(zAxisGeometry, axesMaterial);
+    scene2.add(xAxis2);
+    scene2.add(yAxis2);
+    scene2.add(zAxis2);
+
+    const xArrowhead2 = new THREE.Mesh(arrowheadGeometry, arrowheadMaterial);
+    xArrowhead2.position.set(axesSize, 0, 0);
+    xArrowhead2.rotation.z = -Math.PI / 2;
+    scene2.add(xArrowhead2);
+
+    const yArrowhead2 = new THREE.Mesh(arrowheadGeometry, arrowheadMaterial);
+    yArrowhead2.position.set(0, axesSize, 0);
+    scene2.add(yArrowhead2);
+
+    const zArrowhead2 = new THREE.Mesh(arrowheadGeometry, arrowheadMaterial);
+    zArrowhead2.position.set(0, 0, axesSize);
+    zArrowhead2.rotation.x = Math.PI / 2;
+    scene2.add(zArrowhead2);
+
+    fontLoader.load('https://cdn.jsdelivr.net/npm/three/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+      const textGeometrySettings = { font, size: 1.5, height: 0.2 };
+      const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const xLabel2 = new THREE.Mesh(new THREE.TextGeometry('a1', textGeometrySettings), textMaterial);
+      xLabel2.position.set(axesSize + 2, 0, 0);
+      scene2.add(xLabel2);
+      const yLabel2 = new THREE.Mesh(new THREE.TextGeometry('a2', textGeometrySettings), textMaterial);
+      yLabel2.position.set(0, axesSize + 2, 0);
+      scene2.add(yLabel2);
+      const zLabel2 = new THREE.Mesh(new THREE.TextGeometry('Loss', textGeometrySettings), textMaterial);
+      zLabel2.position.set(0, 0, axesSize + 2);
+      scene2.add(zLabel2);
+    });
+
+    const gridSize = 20;
+    const gridStep = 0.5;
+    let gridMesh, wireframe4;
+
+    function createGrid() {
+      const gridVertices = [];
+      const gridIndices = [];
+      const gridColors = [];
+      for (let i = -gridSize; i <= gridSize; i += gridStep) {
+        for (let j = -gridSize; j <= gridSize; j += gridStep) {
+          const a1_val = Math.max(-10, Math.min(10, i));
+          const a2_val = Math.max(-10, Math.min(10, j));
+          let totalLoss = 0;
+          for (let k = 0; k < points.length; k++) {
+            const { x, y, z } = pointPositions[k];
+            const y_true = trueLabels[k];
+            const y_hat = sigmoid(a0 + a1_val * x + a2_val * y + a3 * z);
+            totalLoss += crossEntropyLoss(y_true, y_hat);
+          }
+          const avgLoss = totalLoss / points.length;
+          gridVertices.push(a1_val, a2_val, avgLoss * 10);
+          gridColors.push(0.8, 0.08, 0.16);
+        }
+      }
+      const gridWidth = (gridSize * 2) / gridStep + 1;
+      for (let i = 0; i < gridWidth - 1; i++) {
+        for (let j = 0; j < gridWidth - 1; j++) {
+          const a = i * gridWidth + j;
+          const b = a + 1;
+          const c = a + gridWidth;
+          const d = c + 1;
+          gridIndices.push(a, b, c);
+          gridIndices.push(b, c, d);
+        }
+      }
+
+      const gridGeometry = new THREE.BufferGeometry();
+      gridGeometry.setAttribute('position', new THREE.Float32BufferAttribute(gridVertices, 3));
+      gridGeometry.setAttribute('color', new THREE.Float32BufferAttribute(gridColors, 3));
+      gridGeometry.setIndex(gridIndices);
+      const gridMaterial = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+      gridMesh = new THREE.Mesh(gridGeometry, gridMaterial);
+      scene2.add(gridMesh);
+      const wireframeGeometry2 = new THREE.WireframeGeometry(gridGeometry);
+      const wireframeMaterial2 = new THREE.LineBasicMaterial({ color: 0x72161c, linewidth: 1 });
+      wireframe4 = new THREE.LineSegments(wireframeGeometry2, wireframeMaterial2);
+      scene2.add(wireframe4);
+    }
+
+    function toggleGradientPlaneVisibility() {
+      if (gridMesh) gridMesh.visible = !gridMesh.visible;
+      if (wireframe4) wireframe4.visible = !wireframe4.visible;
+    }
+
+    function updateGrid() {
+      if (gridMesh) scene2.remove(gridMesh);
+      if (wireframe4) scene2.remove(wireframe4);
+      createGrid();
+    }
+
+    createGrid();
+
+    const sphereGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+    const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x4A90E2 });
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    scene2.add(sphere);
+
+    function updateSpherePosition() {
+      const loss = updateLoss();
+      sphere.position.set(a1, a2, loss * 10);
+    }
+
+    updateSpherePosition();
+    camera2.position.set(15, 20, 20);
+    camera2.lookAt(sphere.position);
+
+    let trackSphere = true; // Default to tracking the sphere
+    const trackSphereCheckbox = document.getElementById('trackSphere');
+    trackSphereCheckbox.addEventListener('change', () => {
+      trackSphere = trackSphereCheckbox.checked;
+    });
+
+    function animate2() {
+      requestAnimationFrame(animate2);
+      controls2.update();
+      if (trackSphere) {
+        camera2.lookAt(sphere.position);
+      } else {
+        camera2.lookAt(0, 0, 0);
+      }
+      renderer2.render(scene2, camera2);
+    }
+
+    animate2();
+
+    window.addEventListener('resize', () => {
+      camera2.aspect = (window.innerWidth * 0.45) / window.innerHeight;
+      camera2.updateProjectionMatrix();
+      renderer2.setSize(window.innerWidth * 0.45, window.innerHeight);
+    });
+
+    let derivativePlane;
+
+    function createDerivativePlane() {
+      const planeGeometry = new THREE.PlaneGeometry(20, 20, 20, 20);
+      const planeMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.5,
+      });
+      derivativePlane = new THREE.Mesh(planeGeometry, planeMaterial);
+      scene2.add(derivativePlane);
+    }
+
+    let gradientArrow;
+    function createGradientArrow() {
+      gradientArrow = new THREE.ArrowHelper(
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(0, 0, 0),
+        5,
+        0x4A90E2,
+        1,
+        0.5
+      );
+      scene2.add(gradientArrow);
+    }
+
+    function updateDerivativePlane() {
+      let da0 = 0, da1 = 0, da2 = 0, da3 = 0;
+      for (let i = 0; i < points.length; i++) {
+        const { x, y, z } = pointPositions[i];
+        const y_true = trueLabels[i];
+        const y_hat = sigmoid(a0 + a1 * x + a2 * y + a3 * z);
+        const error = y_hat - y_true;
+        da0 += error;
+        da1 += error * x;
+        da2 += error * y;
+        da3 += error * z;
+      }
+
+      const gradientMagnitude = Math.sqrt(da0 * da0 + da1 * da1 + da2 * da2 + da3 * da3);
+      da0 /= gradientMagnitude;
+      da1 /= gradientMagnitude;
+      da2 /= gradientMagnitude;
+      da3 /= gradientMagnitude;
+
+      const planeNormal = new THREE.Vector3(da1, da2, da3).normalize();
+      const planeConstant = -planeNormal.dot(new THREE.Vector3(a1, a2, updateLoss() * 10));
+
+      if (derivativePlane) {
+        derivativePlane.position.set(0, 0, 0);
+        derivativePlane.lookAt(planeNormal);
+        derivativePlane.position.set(a1, a2, updateLoss() * 10);
+      }
+    }
+
+    function updateGradientArrow() {
+      let da0 = 0, da1 = 0, da2 = 0, da3 = 0;
+      for (let i = 0; i < points.length; i++) {
+        const { x, y, z } = pointPositions[i];
+        const y_true = trueLabels[i];
+        const y_hat = sigmoid(a0 + a1 * x + a2 * y + a3 * z);
+        const error = y_hat - y_true;
+
+        // Compute partial derivatives of the loss function
+        da0 += error; // ∂Loss/∂a0 = error
+        da1 += error * x; // ∂Loss/∂a1 = error * x
+        da2 += error * y; // ∂Loss/∂a2 = error * y
+        da3 += error * z; // ∂Loss/∂a3 = error * z
+      }
+      da1 = -da1;
+      da2 = -da2;
+
+      // Normalize the gradient vector for visualization
+      const gradientMagnitude = Math.sqrt(da0 * da0 + da1 * da1 + da2 * da2 + da3 * da3);
+      const normalizedGradient = new THREE.Vector3(
+        da1 / gradientMagnitude, // Use da1 and da2 for 2D visualization
+        da2 / gradientMagnitude,
+        0
+      );
+
+      // Update the gradient arrow
+      if (gradientArrow) {
+        gradientArrow.setDirection(normalizedGradient);
+        gradientArrow.position.set(a1, a2, updateLoss() * 10 + 0.4);
+      }
+
+      // Update the Gradient Vector display
+      const gradientVectorElement = document.getElementById('gradient-vector');
+      gradientVectorElement.textContent = `Gradient Vector: (${da0.toFixed(2)}, ${da1.toFixed(2)}, ${da2.toFixed(2)}, ${da3.toFixed(2)})`;
+    }
+
+    createDerivativePlane();
+    createGradientArrow();
+    updateDerivativePlane();
+    updateGradientArrow();
+
+    // Hide gradient plane and arrow by default
+    derivativePlane.visible = false;
+    gradientArrow.visible = false;
+
+    // Add toggle for gradient arrow
+    const toggleGradientArrow = document.getElementById('toggleGradientArrow');
+    toggleGradientArrow.addEventListener('change', () => {
+      if (gradientArrow) {
+        gradientArrow.visible = !toggleGradientArrow.checked;
+      }
+    });
+
+    function adjustSlider(id, delta) {
+      const slider = document.getElementById(id);
+      const valueElement = document.getElementById(id + '-value');
+      let value = parseFloat(slider.value) + delta;
+      value = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), value));
+      slider.value = value;
+      valueElement.textContent = value.toFixed(2);
+
+      switch (id) {
+        case 'a0':
+          a0 = value;
+          break;
+        case 'a1':
+          a1 = value;
+          break;
+        case 'a2':
+          a2 = value;
+          break;
+        case 'a3':
+          a3 = value;
+          break;
+        case 'b0':
+          b0 = value;
+          break;
+        case 'b1':
+          b1 = value;
+          break;
+        case 'b2':
+          b2 = value;
+          break;
+        case 'b3':
+          b3 = value;
+          break;
+        case 'new_param1':
+          newParam1 = value;
+          break;
+        case 'new_param2':
+          newParam2 = value;
+          break;
+        case 'new_param3':
+          newParam3 = value;
+          break;
+      }
+
+      throttledUpdatePlane();
+    }
+
+    const togglePoints = document.getElementById('togglePoints');
+    togglePoints.addEventListener('change', () => {
+      points.forEach(point => {
+        point.visible = !togglePoints.checked;
+      });
+    });
+
+    const togglePlane = document.getElementById('togglePlane');
+    togglePlane.addEventListener('change', () => {
+      if (derivativePlane) {
+        derivativePlane.visible = !togglePlane.checked;
+      }
+    });
+
+    const togglePlane1 = document.getElementById('togglePlane1');
+    togglePlane1.addEventListener('change', () => {
+      plane1.visible = !togglePlane1.checked;
+      wireframe1.visible = !togglePlane1.checked;
+    });
+
+    const togglePlane2 = document.getElementById('togglePlane2');
+    togglePlane2.addEventListener('change', () => {
+      plane2.visible = !togglePlane2.checked;
+      wireframe2.visible = !togglePlane2.checked;
+    });
+
+    const togglePlane3 = document.getElementById('togglePlane3');
+    togglePlane3.addEventListener('change', () => {
+      plane3.visible = !togglePlane3.checked;
+      wireframe3.visible = !togglePlane3.checked;
+    });
+
+    renderer1.domElement.style.display = 'none';
+    renderer1.domElement.style.display = 'block';
+
+    // Update point colors and loss function graph based on selected dataset
+    function updateDataset() {
+      const selectedDataset = document.querySelector('input[name="dataset"]:checked').value;
+
+      // Update true labels based on the selected dataset
+      for (let i = 0; i < points.length; i++) {
+        const { x, y, z } = pointPositions[i];
+        let condition;
+
+        switch (selectedDataset) {
+          case '1':
+            condition = x * 2 + y * 4 + z * -1 + 3 > 0;
+            break;
+          case '2':
+            condition = x * 5 + y * -3 + z * 2 + 1 > -16 && x * 5 + y * -3 + z * 2 + 1 < 16;
+            break;
+          case '3':
+            const coef_x = 10;
+            const coef_y = -4;
+            const coef_z = 0.4;
+            const b = 5;
+            condition = 0.1 * x * coef_x + 2 * y * y * coef_y + z * coef_z + b > 0;
+            break;
+          default:
+            condition = x * 10 + 2 * y * y * -4 + z * 0.4 + 5 > 0;
+        }
+
+        trueLabels[i] = condition ? 1 : 0;
+        points[i].material = condition ? whiteMaterial : darkGrayMaterial;
+      }
+
+      // Update the loss function graph
+      updateGrid();
+      updateSpherePosition();
+      updateLoss();
+    }
+
+    // Initial call to set the colors and loss function graph based on the default selected dataset
+    updateDataset();
+  </script>
+</body>
+</html>
