@@ -760,7 +760,7 @@
     function crossEntropyLoss(y_true, y_pred) {
       const epsilon = 1e-7;
       y_pred = Math.max(epsilon, Math.min(1 - epsilon, y_pred));
-      return -(y_true * Math.log(y_pred) + (1 - y_true) * Math.log(1 - y_pred))-6;
+      return -(y_true * Math.log(y_pred) + (1 - y_true) * Math.log(1 - y_pred))-5;
     }
 
     function updateLoss() {
@@ -1165,7 +1165,7 @@
 
         switch (selectedDataset) {
           case '1':
-            condition = x * 2 + y * 4 + z * -1 + 3 > 0;
+            condition = x + y * 2 + z * -1/2 + 1.5 > 0;
             break;
           case '2':
             condition = x * 5 + y * -3 + z * 2 + 1 > -16 && x * 5 + y * -3 + z * 2 + 1 < 16;
