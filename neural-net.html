@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Neural Network Visualization</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: rgb(2 6 23); 
+            color: white; 
+        }
+        .container { 
+            display: flex; 
+            gap: 20px; 
+            padding: 24px;
+        }
+        .controls-container {
+            width: 256px;
+        }
+        .controls-panel {
+            background: rgb(15 23 42);
+            border: 1px solid rgb(30 41 59);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        .controls-title {
+            font-size: 1.125rem;
+            font-weight: bold;
+            margin-bottom: 24px;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+
+        .forward-btn {
+            background: rgb(20 32 93);
+            color: rgb(198, 228, 250);
+        }
+        .forward-btn:hover {
+            background: rgb(31, 53, 161);
+        }
+
+        .loss-btn {
+            background: rgb(20 32 93);
+            color: rgb(198, 228, 250);
+        }
+        .loss-btn:hover {
+            background: rgb(31, 53, 161);
+        }
+        .gradient-btn {
+            background: rgb(42, 30, 99);
+            color: rgb(226, 210, 245);
+        }
+        .gradient-btn:hover {
+            background: rgb(61, 46, 126);
+        }
+        .update-btn {
+            background: rgb(42, 30, 99);
+            color: rgb(226, 210, 245);
+        }
+
+    .step-btn {
+        background: rgb(169, 32, 34);
+        color: rgb(210, 245, 226);
+    }
+    .step-btn:hover {
+        background: rgb(203, 37, 40);
+    }
+
+        .update-btn:hover {
+            background: rgb(61, 46, 126);
+        }
+        .learning-rate {
+            margin-top: 16px;
+        }
+        .learning-rate label {
+            display: block;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+        }
+        .learning-rate input {
+            width: 80%;
+            padding: 8px 12px;
+            background: rgb(30 41 59);
+            border: 1px solid rgb(51 65 85);
+            border-radius: 8px;
+            color: white;
+        }
+        .loss-display {
+            background: rgb(15 23 42);
+            border: 1px solid rgb(30 41 59);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .loss-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .loss-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: rgb(218, 72, 72);
+        }
+        .loss-status {
+            font-size: 0.875rem;
+            color: rgb(255, 255, 255);
+            margin-top: 8px;
+        }
+        .network {
+            position: relative;
+            flex: 1;
+            background: rgb(15 23 42);
+            border: 1px solid rgb(30 41 59);
+            border-radius: 12px;
+            padding: 32px;
+            min-width: 1200px;
+            min-height: 800px;
+        }
+        .node {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: rgb(224, 230, 238);
+            border: 1px solid rgb(71 85 105);
+            border-radius: 50%;
+        }
+        .connection {
+            position: absolute;
+            height: 1px;
+            background: rgb(224, 230, 238);
+            transform-origin: 0 0;
+        }
+        .param {
+            position: absolute;
+            font-size: 12px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 4px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .gradient {
+            margin-bottom: 2px;
+        }
+        .gradient-positive {
+            color: rgb(235, 95, 116);
+        }
+        .gradient-negative {
+            color: rgb(86, 221, 201);
+        }
+        .param-value {
+            color: rgb(239, 242, 249);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls-container">
+            <div class="controls-panel">
+                <div class="controls-title">Training Ops</div>
+                <div class="button-container">
+                    <button class="forward-btn" onclick="forwardPropagate()">Forward Propagation</button>
+                    <button class="loss-btn" onclick="computeLoss()">Compute Loss</button>
+                    <button class="gradient-btn" onclick="computeGradients()">Compute Gradients</button>
+                    <button class="update-btn" onclick="updateParams()">Update Parameters</button>
+                    
+                    <button class="step-btn" onclick="step()">Step</button>
+                    <div class="learning-rate">
+                        <label>Learning Rate:</label>
+                        <input type="number" id="lr" value="1.0" step="0.1" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="loss-display">
+                <div class="loss-title">Current Loss</div>
+                <div class="loss-value" id="lossValue">0.0000</div>
+                <div class="loss-status" id="predStatus">Run forward propagation first</div>
+            </div>
+        </div>
+        <div class="network" id="network"></div>
+    </div>
+
+    <script>
+        let network;
+        let dataset;
+        let predictions = [];
+        let gradients = { weights: {}, biases: {} };
+
+        class NeuralNetwork {
+            constructor() {
+                this.weights = {
+                    1: Array.from({length: 4}, () => Array.from({length: 3}, () => Math.random() * 2 - 1)),
+                    2: Array.from({length: 4}, () => Array.from({length: 4}, () => Math.random() * 2 - 1)),
+                    3: Array.from({length: 2}, () => Array.from({length: 4}, () => Math.random() * 2 - 1))
+                };
+                this.biases = {
+                    1: Array(4).fill(0).map(() => Math.random() * 2 - 1),
+                    2: Array(4).fill(0).map(() => Math.random() * 2 - 1),
+                    3: Array(2).fill(0).map(() => Math.random() * 2 - 1)
+                };
+            }
+
+            forward(input) {
+                let a = input;
+                let activations = [a];
+                let preActivations = [];
+
+                for (let l = 1; l <= 3; l++) {
+                    const z = this.weights[l].map((w, i) => 
+                        w.reduce((sum, weight, j) => sum + weight * a[j], 0) + this.biases[l][i]
+                    );
+                    preActivations.push(z);
+                    a = z.map(x => Math.max(0, x)); // ReLU activation
+                    activations.push(a);
+                }
+
+                return { activations, preActivations };
+            }
+        }
+
+        function formatParam(value, gradient) {
+            return `
+                <div class="gradient ${gradient >= 0 ? 'gradient-positive' : 'gradient-negative'}">
+                    ${gradient.toFixed(3)}
+                </div>
+                <div class="param-value">${value.toFixed(3)}</div>
+            `;
+        }
+
+        function drawNetwork() {
+            const container = document.getElementById('network');
+            container.innerHTML = '';
+
+            const layers = [
+                { x: 200, nodes: 3 },
+                { x: 500, nodes: 4 },
+                { x: 800, nodes: 4 },
+                { x: 1100, nodes: 2 }
+            ];
+
+            layers.forEach((layer, lIdx) => {
+                Array.from({ length: layer.nodes }).forEach((_, nIdx) => {
+                    const y = 150 + (nIdx * (500 / layer.nodes));
+
+                    // Draw node
+                    const node = document.createElement('div');
+                    node.className = 'node';
+                    node.style.left = `${layer.x - 16}px`;
+                    node.style.top = `${y - 16}px`;
+                    container.appendChild(node);
+
+                    // Draw bias for non-input layers
+                    if (lIdx > 0) {
+                        const bias = document.createElement('div');
+                        bias.className = 'param';
+                        bias.style.left = `${layer.x - 40}px`;
+                        bias.style.top = `${y + 20}px`;
+                        bias.innerHTML = formatParam(
+                            network.biases[lIdx][nIdx],
+                            (gradients.biases[lIdx] || {})[nIdx] || 0
+                        );
+                        container.appendChild(bias);
+                    }
+
+                    // Draw connections to previous layer
+                    if (lIdx > 0) {
+                        const prevLayer = layers[lIdx - 1];
+                        Array.from({ length: prevLayer.nodes }).forEach((_, prevNIdx) => {
+                            const prevY = 150 + (prevNIdx * (500 / prevLayer.nodes));
+                            
+                            // Draw connection line
+                            const connection = document.createElement('div');
+                            connection.className = 'connection';
+                            const dx = layer.x - prevLayer.x;
+                            const dy = y - prevY;
+                            connection.style.width = `${Math.sqrt(dx*dx + dy*dy)}px`;
+                            connection.style.left = `${prevLayer.x + 16}px`;
+                            connection.style.top = `${prevY}px`;
+                            connection.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+                            container.appendChild(connection);
+
+                            // Draw weight
+                            const weight = document.createElement('div');
+                            weight.className = 'param';
+                            weight.style.left = `${(prevLayer.x + layer.x)/2 - 20}px`;
+                            weight.style.top = `${(prevY + y)/2 - 10}px`;
+                            weight.innerHTML = formatParam(
+                                network.weights[lIdx][nIdx][prevNIdx],
+                                (gradients.weights[lIdx] || {})[`${lIdx}_${nIdx}_${prevNIdx}`] || 0
+                            );
+                            container.appendChild(weight);
+                        });
+                    }
+                });
+            });
+        }
+
+        function generateDataset() {
+            dataset = Array.from({length: 100}, () => ({
+                x: [Math.random()*2-1, Math.random()*2-1, Math.random()*2-1],
+                y: Math.random() > 0.5 ? 1 : 0
+            }));
+        }
+
+        function forwardPropagate() {
+            predictions = dataset.map(({x}) => {
+                const { activations } = network.forward(x);
+                return activations[3];
+            });
+            document.getElementById('predStatus').textContent = "Predictions ready";
+            drawNetwork();
+        }
+
+        function computeLoss() {
+            if (predictions.length === 0) {
+                alert("Please run forward propagation first!");
+                return;
+            }
+
+            let totalLoss = 0;
+            predictions.forEach((pred, i) => {
+                const target = dataset[i].y;
+                totalLoss -= Math.log(pred[target] + 1e-8);
+            });
+
+            document.getElementById('lossValue').textContent = (totalLoss / dataset.length).toFixed(4);
+        }
+        function step(interval = 500) {
+            const stepSequence = async () => {
+                try {
+                    forwardPropagate();
+                    await new Promise(resolve => setTimeout(resolve, interval));
+                    computeLoss();
+                    await new Promise(resolve => setTimeout(resolve, interval));
+                    computeGradients();
+                    await new Promise(resolve => setTimeout(resolve, interval));
+                    updateParams();
+                    // await new Promise(resolve => setTimeout(resolve, interval));
+
+                } catch (error) {
+                    console.error("Error during training step:", error);
+                }
+            };
+
+            stepSequence();
+        }
+        function computeGradients() {
+            gradients = { weights: {1: {}, 2: {}, 3: {}}, biases: {1: {}, 2: {}, 3: {}} };
+            
+            dataset.forEach(({x, y}) => {
+                const { activations, preActivations } = network.forward(x);
+                const target = Array(2).fill(0);
+                target[y] = 1;
+
+                const output = activations[3];
+                const delta3 = output.map((a, i) => (a - target[i]) * (preActivations[2][i] > 0 ? 1 : 0));
+                const delta2 = network.weights[3][0].map((w, j) => 
+                    delta3.reduce((sum, d, k) => sum + d * network.weights[3][k][j], 0) * 
+                    (preActivations[1][j] > 0 ? 1 : 0)
+                );
+                const delta1 = network.weights[2][0].map((w, j) => 
+                    delta2.reduce((sum, d, k) => sum + d * network.weights[2][k][j], 0) * 
+                    (preActivations[0][j] > 0 ? 1 : 0)
+                );
+
+                [1, 2, 3].forEach(l => {
+                    const delta = [delta1, delta2, delta3][l-1];
+                    const prevActivations = activations[l-1];
+
+                    delta.forEach((d, i) => {
+                        prevActivations.forEach((a, j) => {
+                            const key = `${l}_${i}_${j}`;
+                            gradients.weights[l][key] = (gradients.weights[l][key] || 0) + d * a;
+                        });
+                        gradients.biases[l][i] = (gradients.biases[l][i] || 0) + d;
+                    });
+                });
+            });
+
+            // Normalize gradients
+            Object.keys(gradients.weights).forEach(l => {
+                Object.keys(gradients.weights[l]).forEach(k => {
+                    gradients.weights[l][k] /= dataset.length;
+                });
+            });
+            Object.keys(gradients.biases).forEach(l => {
+                Object.keys(gradients.biases[l]).forEach(k => {
+                    gradients.biases[l][k] /= dataset.length;
+                });
+            });
+
+            drawNetwork();
+        }
+
+        function updateParams() {
+            const lr = parseFloat(document.getElementById('lr').value);
+
+            for (let l = 1; l <= 3; l++) {
+                network.biases[l] = network.biases[l].map((b, i) => 
+                    b - lr * (gradients.biases[l][i] || 0)
+                );
+
+                network.weights[l].forEach((layer, i) => {
+                    layer.forEach((w, j) => {
+                        const key = `${l}_${i}_${j}`;
+                        network.weights[l][i][j] -= lr * (gradients.weights[l][key] || 0);
+                    });
+                });
+            }
+
+            predictions = [];
+            document.getElementById('predStatus').textContent = "Run forward propagation first";
+            drawNetwork();
+        }
+        function init() {
+            // Create a new neural network instance
+            network = new NeuralNetwork();
+            // Generate the initial random dataset
+            generateDataset();
+            // Draw the initial network visualization
+            drawNetwork();
+        }
+
+        // Initialize when the page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
+
+
+
